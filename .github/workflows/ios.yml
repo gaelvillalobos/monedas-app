@@ -1,0 +1,39 @@
+# Verifica que la app iOS compile, en una Mac de GitHub.
+# OJO: esto NO genera un archivo instalable en un iPhone. Para eso hace falta
+# una cuenta de Apple Developer (USD 99/año) y firmar la app con sus certificados.
+# Sirve para saber que el proyecto iOS está sano sin tener una Mac.
+# Se dispara solo a mano: los runners macOS consumen 10x los minutos de Actions.
+name: iOS (compilación de prueba)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Generar el proyecto iOS
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Compilar sin firmar (simulador)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
