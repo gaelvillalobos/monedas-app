@@ -24,10 +24,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Requiere que Pages esté activado una vez a mano:
+      # Settings -> Pages -> Source: GitHub Actions
       - uses: actions/configure-pages@v5
-        with:
-          # activa GitHub Pages solo, sin tener que tocar Settings a mano
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: www
