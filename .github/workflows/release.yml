@@ -38,11 +38,38 @@ jobs:
       - name: Restaurar la clave de firma
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
+          # Solo se imprimen longitudes, nunca el contenido de los secrets.
+          echo "ANDROID_KEYSTORE_BASE64: ${#KEYSTORE_B64} caracteres (deberían ser 3584)"
+          echo "ANDROID_KEYSTORE_PASSWORD: ${#PW} caracteres (deberían ser 32)"
+
           if [ -z "$KEYSTORE_B64" ]; then
-            echo "Falta el secret ANDROID_KEYSTORE_BASE64"; exit 1
+            echo "ERROR: el secret ANDROID_KEYSTORE_BASE64 está vacío o no existe."
+            echo "Revisá Settings -> Secrets and variables -> Actions."
+            exit 1
           fi
-          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.p12"
+          if [ -z "$PW" ]; then
+            echo "ERROR: falta el secret ANDROID_KEYSTORE_PASSWORD."
+            exit 1
+          fi
+
+          # tr saca cualquier salto de línea o espacio que se haya colado al pegar
+          if ! printf '%s' "$KEYSTORE_B64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/upload.p12" 2>/dev/null; then
+            echo "ERROR: el contenido del secret no es base64 válido."
+            echo "Volvé a copiarlo entero desde monedas-claves\\upload.p12.base64."
+            exit 1
+          fi
+
+          SIZE=$(stat -c%s "$RUNNER_TEMP/upload.p12")
+          echo "clave restaurada: $SIZE bytes (deberían ser 2688)"
+          # un PKCS12 válido arranca con los bytes 30 82
+          MAGIC=$(od -An -tx1 -N2 "$RUNNER_TEMP/upload.p12" | tr -d ' ')
+          if [ "$MAGIC" != "3082" ]; then
+            echo "ERROR: el archivo restaurado no es un keystore PKCS12 (empieza con $MAGIC)."
+            exit 1
+          fi
+          echo "OK: keystore válido."
 
       # versionCode tiene que subir en cada envío a Play: usamos el número de ejecución.
       - name: Compilar firmado
