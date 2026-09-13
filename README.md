@@ -127,20 +127,70 @@ npx cap sync
 
 ---
 
+## 5. Publicar en Google Play
+
+Costo: **USD 25 por única vez** (alta de cuenta de desarrollador). Sin cuotas anuales.
+
+### 5.1 Cargar la clave de firma en GitHub (una sola vez)
+
+La clave está en `C:\Users\GVILLALOBOS\monedas-claves` — **fuera del repo, nunca se sube**.
+Hacele una copia en un lugar seguro: si la perdés no podés publicar actualizaciones sin pedirle
+a Google un reseteo de la clave de subida.
+
+En el repo → **Settings → Secrets and variables → Actions → New repository secret**, dos secrets:
+
+| Nombre | Valor |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | todo el contenido de `monedas-claves\upload.p12.base64` |
+| `ANDROID_KEYSTORE_PASSWORD` | el contenido de `monedas-claves\password.txt` |
+
+### 5.2 Generar el paquete firmado
+
+**Actions → Release para Google Play → Run workflow**, poniendo la versión (`1.0.0` la primera vez).
+Deja dos archivos para descargar:
+
+- `monedas-play-aab` → el `.aab` que se sube a Play.
+- `monedas-release-apk` → un APK firmado para probar en un celular antes de publicar.
+
+El `versionCode` sale del número de ejecución del workflow, así que sube solo en cada release.
+Play rechaza un envío con un `versionCode` repetido.
+
+### 5.3 Crear la app en Play Console
+
+1. Cuenta de desarrollador en <https://play.google.com/console> (USD 25, tarjeta, verificación de identidad).
+2. **Crear aplicación**: nombre, idioma español, tipo Aplicación, gratuita.
+3. Completar, en **Contenido de la aplicación**, todos los formularios. Las respuestas exactas están
+   en [`store/ficha-play.md`](store/ficha-play.md): política de privacidad, acceso a la app, anuncios,
+   clasificación de contenido, público objetivo y **seguridad de los datos**.
+4. **Ficha de Play Store**: pegar los textos y subir los gráficos, también listados en `store/ficha-play.md`.
+5. **Versiones → Producción → Crear versión**: subir el `.aab`.
+6. Enviar a revisión. La primera suele tardar varios días; Google además exige **12 testers durante
+   14 días** para cuentas personales nuevas antes de habilitar producción.
+
+> Al ser una app para chicos aplica la **Política de Familias** de Google Play. Como no tiene
+> publicidad, ni compras, ni recolección de datos, se cumple sin cambios en el código — pero hay
+> que declararlo correctamente en los formularios.
+
 ## Estructura
 
 ```
 monedas-app/
 ├─ .github/workflows/       compilan y publican solos en GitHub
 │  ├─ pages.yml             publica www/ en GitHub Pages (la PWA)
-│  ├─ android.yml           genera el APK
+│  ├─ android.yml           genera el APK de prueba
+│  ├─ release.yml           genera el .aab firmado para Google Play
 │  └─ ios.yml               verifica que iOS compile
+├─ store/                   materiales de la ficha de Google Play
+│  ├─ ficha-play.md         textos y respuestas de los formularios
+│  └─ feature-graphic-1024x500.png
 ├─ www/                      la app (esto es lo único que hay que publicar para la PWA)
 │  ├─ index.html
 │  ├─ styles.css
 │  ├─ app.js                 toda la lógica
 │  ├─ manifest.webmanifest    nombre, ícono, colores de la app instalada
 │  ├─ sw.js                  service worker: funciona sin internet
+│  ├─ privacidad.html        política de privacidad (Play la exige)
+│  ├─ fonts/                 Fredoka incluida en la app (SIL OFL 1.1)
 │  └─ icons/                 PNG generados por tools/make-icons.ps1
 ├─ tools/
 │  ├─ serve.ps1              servidor local para probar (no necesita Node)
@@ -151,6 +201,9 @@ monedas-app/
 
 ## Notas
 
+- **Cero conexiones externas**: la app no pide nada a ningún servidor. La tipografía Fredoka está
+  incluida en `www/fonts/` (licencia SIL OFL 1.1, ver `fonts/OFL.txt`). Esto es lo que permite
+  declarar en Google Play que no se recolecta ni transmite ningún dato.
 - **Dónde se guardan los datos**: en el propio dispositivo. En la app nativa usa *Capacitor Preferences*
   (no se borra al limpiar el navegador); en la PWA usa `localStorage`. No hay servidor ni cuenta: los datos
   de un celular no se ven en otro.

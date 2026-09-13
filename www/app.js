@@ -298,7 +298,12 @@ function renderParent() {
     ${S.history.length ? `<div class="card hist"><b>📅 Meses cerrados</b>
       ${S.history.map(h => `<div class="item"><span>${h.month}</span><span>${h.coins} 🪙 · ${fmt(h.total)}${h.interest ? ` · +${fmt(h.interest)} interés` : ''}</span></div>`).join('')}</div>` : ''}
 
-    <button class="btn ghost" style="margin-top:16px" onclick="parentOpen=false;go('misiones')">Salir del panel</button>
+    <p style="margin-top:18px;font-size:13px;color:var(--muted);text-align:center">
+      Los datos de cada chico se guardan solo en este teléfono. ·
+      <a href="privacidad.html" style="color:var(--coin)">Privacidad</a>
+    </p>
+
+    <button class="btn ghost" style="margin-top:10px" onclick="parentOpen=false;go('misiones')">Salir del panel</button>
     <button class="btn ghost" style="margin-top:8px;font-size:14px;opacity:.7" onclick="modal={type:'reset'};render()">Borrar todo y empezar de cero</button>
   </section>`;
 }
